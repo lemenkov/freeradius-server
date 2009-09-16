@@ -1,6 +1,6 @@
 #%PAM-1.0
-auth       include	system-auth
+auth       include	password-auth
 account    required	pam_nologin.so
-account    include	system-auth
-password   include	system-auth
-session    include	system-auth
+account    include	password-auth
+password   include	password-auth
+session    include	password-auth
