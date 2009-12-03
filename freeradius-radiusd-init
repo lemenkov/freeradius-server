@@ -1,80 +1,110 @@
 #!/bin/sh
 #
+# radiusd Start/Stop the FreeRADIUS daemon
+#
 # chkconfig: - 88 10
-# description: Start/Stop the RADIUS server daemon
-#
-#    This program is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
-#
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
-#
-#    You should have received a copy of the GNU General Public License
-#    along with this program; if not, write to the Free Software
-#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
-#
-#    Copyright (C) 2001 The FreeRADIUS Project   http://www.freeradius.org
-#
+# description: Extensible, configurable, high performance RADIUS server.
+
+### BEGIN INIT INFO
+# Provides: radiusd
+# Required-Start: $network
+# Required-Stop:
+# Should-Start: $time $syslog mysql ldap postgresql samba krb5-kdc
+# Should-Stop:
+# Short-Description: FreeRADIUS server
+# Description: Extensible, configurable, high performance RADIUS server.
+### END INIT INFO
 
 # Source function library.
 . /etc/rc.d/init.d/functions
 
-RADIUSD=/usr/sbin/radiusd
-LOCKF=/var/lock/subsys/radiusd
-CONFIG=/etc/raddb/radiusd.conf
+initname=${0##*/}
+prog=radiusd
+exec=/usr/sbin/$prog
+config=/etc/raddb/radiusd.conf
+pidfile=/var/run/$prog/$prog.pid
+lockfile=/var/lock/subsys/$initname
 
-[ -f $RADIUSD ] || exit 0
-[ -f $CONFIG ] || exit 0
+[ -e /etc/sysconfig/$prog ] && . /etc/sysconfig/$prog
 
-RETVAL=0
+start() {
+    [ -x $exec ] || exit 5
+    [ -f $config ] || exit 6
+    echo -n $"Starting $prog: "
+    daemon --pidfile $pidfile $exec
+    retval=$?
+    echo
+    [ $retval -eq 0 ] && touch $lockfile
+    return $retval
+}
+
+stop() {
+    echo -n $"Stopping $prog: "
+    killproc -p $pidfile $prog
+    retval=$?
+    echo
+    [ $retval -eq 0 ] && rm -f $lockfile
+    return $retval
+}
+
+restart() {
+    stop
+    start
+}
+
+reload() {
+    # radiusd may not be capable of a 100% configuration reload depending
+    # on which loadable modules are in use, if sending the server a
+    # HUP is not sufficient then use restart here instead. However, we
+    # prefer by default to use HUP since it's what is usually desired.
+    #    
+    # restart
+
+    kill -HUP `pidofproc -p $pidfile $prog`
+}
+
+force_reload() {
+    restart
+}
+
+rh_status() {
+    # run checks to determine if the service is running or use generic status
+    status -p $pidfile $prog
+}
+
+rh_status_q() {
+    rh_status >/dev/null 2>&1
+}
+
 
 case "$1" in
-  start)
-	echo -n $"Starting RADIUS server: "
-	daemon $RADIUSD
-	RETVAL=$?
-	echo
-	[ $RETVAL -eq 0 ] && touch $LOCKF &&
-	    ln -s /var/run/radiusd/radiusd.pid /var/run/radiusd.pid 2>/dev/null
-	;;
-  stop)
-	echo -n $"Stopping RADIUS server: "
-	killproc $RADIUSD
-	RETVAL=$?
-	echo
-	[ $RETVAL -eq 0 ] && rm -f $LOCKF
-	;;
-  status)
-	status radiusd
-	RETVAL=$?
+    start)
+        rh_status_q && exit 0
+        $1
         ;;
-  reload)
-	echo -n $"Reloading RADIUS server: "
-	killproc $RADIUSD -HUP
-	RETVAL=$?
-	echo
-	;;
-  restart)
-	$0 stop
-	sleep 3
-	$0 start
-	RETVAL=$?
-	;;
-  condrestart)
-	if [ -f $LOCKF ]; then
-		$0 stop
-		sleep 3
-		$0 start
-		RETVAL=$?
-	fi
-	;;
-  *)
-	echo $"Usage: $0 {start|stop|status|restart|reload|condrestart}"
-	exit 1
+    stop)
+        rh_status_q || exit 0
+        $1
+        ;;
+    restart)
+        $1
+        ;;
+    reload)
+        rh_status_q || exit 7
+        $1
+        ;;
+    force-reload)
+        force_reload
+        ;;
+    status)
+        rh_status
+        ;;
+    condrestart|try-restart)
+        rh_status_q || exit 0
+        restart
+        ;;
+    *)
+        echo $"Usage: $0 {start|stop|status|restart|condrestart|try-restart|reload|force-reload}"
+        exit 2
 esac
-
-exit $RETVAL
+exit $?
