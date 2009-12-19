@@ -9,6 +9,8 @@
 # Provides: radiusd
 # Required-Start: $network
 # Required-Stop:
+# Default-Start:
+# Default-Stop:
 # Should-Start: $time $syslog mysql ldap postgresql samba krb5-kdc
 # Should-Stop:
 # Short-Description: FreeRADIUS server
@@ -18,12 +20,11 @@
 # Source function library.
 . /etc/rc.d/init.d/functions
 
-initname=${0##*/}
 prog=radiusd
 exec=/usr/sbin/$prog
 config=/etc/raddb/radiusd.conf
 pidfile=/var/run/$prog/$prog.pid
-lockfile=/var/lock/subsys/$initname
+lockfile=/var/lock/subsys/radiusd
 
 [ -e /etc/sysconfig/$prog ] && . /etc/sysconfig/$prog
 
