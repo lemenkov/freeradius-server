@@ -21,18 +21,20 @@
 . /etc/rc.d/init.d/functions
 
 prog=radiusd
-exec=/usr/sbin/$prog
-config=/etc/raddb/radiusd.conf
-pidfile=/var/run/$prog/$prog.pid
-lockfile=/var/lock/subsys/radiusd
 
 [ -e /etc/sysconfig/$prog ] && . /etc/sysconfig/$prog
+
+exec=${exec:=/usr/sbin/$prog}
+config_dir=${config_dir:=/etc/raddb}
+config=${config:=$config_dir/radiusd.conf}
+pidfile=${pidfile:=/var/run/$prog/$prog.pid}
+lockfile=${lockfile:=/var/lock/subsys/radiusd}
 
 start() {
     [ -x $exec ] || exit 5
     [ -f $config ] || exit 6
     echo -n $"Starting $prog: "
-    daemon --pidfile $pidfile $exec
+    daemon --pidfile $pidfile $exec -d $config_dir
     retval=$?
     echo
     [ $retval -eq 0 ] && touch $lockfile
