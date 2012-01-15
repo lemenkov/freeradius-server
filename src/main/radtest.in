@@ -121,7 +121,7 @@ fi
 	    echo "EAP-Code = Response"
 	    echo "EAP-Type-Identity = \"$1\""
 	fi
-	if [ "$6" ]
+	if [ ! -z "$6" ] && [[ $6 =~ ^[0-9]+$ ]] && [ $6 -gt 0 ]
 	then
 		echo "Framed-Protocol = PPP"
 	fi
