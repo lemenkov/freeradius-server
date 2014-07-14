@@ -51,7 +51,7 @@ typedef struct home_server {
 	fr_event_t	*ev;
 	struct timeval	when;
 
-	int		response_window;
+	struct timeval	response_window;
 	int		no_response_fail;
 	int		max_outstanding; /* don't overload it */
 	int		currently_outstanding;

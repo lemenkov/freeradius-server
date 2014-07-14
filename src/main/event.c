@@ -459,7 +459,8 @@ static void wait_for_proxy_id_to_expire(void *ctx)
 		request->when.tv_sec += request->home_server->coa_mrd;
 	} else
 #endif
-	request->when.tv_sec += request->home_server->response_window;
+	timeradd(&request->when, &request->home_server->response_window,
+			&request->when);
 
 	if ((request->num_proxied_requests == request->num_proxied_responses) ||
 	    timercmp(&now, &request->when, >)) {
@@ -1898,9 +1899,10 @@ static int proxy_request(REQUEST *request)
 	gettimeofday(&request->proxy_when, NULL);
 
 	request->next_when = request->proxy_when;
-	request->next_when.tv_sec += request->home_server->response_window;
+	timeradd(&request->next_when, &request->home_server->response_window,
+			&request->next_when);
 
-	rad_assert(request->home_server->response_window > 0);
+	rad_assert(timerisset(&request->home_server->response_window));
 
 	if (timercmp(&when, &request->next_when, <)) {
 		request->next_when = when;

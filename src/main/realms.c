@@ -321,7 +321,7 @@ static CONF_PARSER home_server_config[] = {
 	{ "src_ipaddr",  PW_TYPE_STRING_PTR,
 	  0, &hs_srcipaddr,  NULL },
 
-	{ "response_window", PW_TYPE_INTEGER,
+	{ "response_window", PW_TYPE_TIMEVAL,
 	  offsetof(home_server,response_window), NULL,   "30" },
 	{ "no_response_fail", PW_TYPE_BOOLEAN,
 	  offsetof(home_server,no_response_fail), NULL,   NULL },
@@ -378,6 +378,7 @@ static int home_server_add(realm_config_t *rc, CONF_SECTION *cs)
 	home_server *home;
 	int dual = FALSE;
 	CONF_PAIR *cp;
+	struct timeval tv;
 
 	free(hs_virtual_server); /* used only for printing during parsing */
 	hs_virtual_server = NULL;
@@ -625,14 +626,27 @@ static int home_server_add(realm_config_t *rc, CONF_SECTION *cs)
 	if (home->ping_interval < 6) home->ping_interval = 6;
 	if (home->ping_interval > 120) home->ping_interval = 120;
 
-	if (home->response_window < 1) home->response_window = 1;
-	if (home->response_window > 60) home->response_window = 60;
+	tv.tv_sec = 0;
+	tv.tv_usec = 1000;
+	if (timercmp(&home->response_window, &tv, <)) home->response_window = tv;
+	tv.tv_sec = 60;
+	tv.tv_usec = 0;
+	if (timercmp(&home->response_window, &tv, >)) home->response_window = tv;
+
+	/*
+	 *	Track half the minimum response window, so that we can
+	 *	correctly set the timers in process.c
+	 */
+	tv.tv_sec = home->response_window.tv_sec >> 1;
+	tv.tv_usec = ((home->response_window.tv_sec & 1) * 1000000 +
+			home->response_window.tv_usec) >> 1;
+	if (timercmp(&mainconfig.init_delay, &tv, >)) mainconfig.init_delay = tv;
 
 	if (home->zombie_period < 1) home->zombie_period = 1;
 	if (home->zombie_period > 120) home->zombie_period = 120;
 
-	if (home->zombie_period < home->response_window) {
-		home->zombie_period = home->response_window;
+	if (home->zombie_period < (int)home->response_window.tv_sec) {
+		home->zombie_period = (int)home->response_window.tv_sec;
 	}
 
 	if (home->num_pings_to_alive < 3) home->num_pings_to_alive = 3;
@@ -1126,7 +1140,8 @@ static int old_server_add(realm_config_t *rc, CONF_SECTION *cs,
 		home->max_outstanding = 65535*16;
 		home->zombie_period = rc->retry_delay * rc->retry_count;
 		if (home->zombie_period == 0) home->zombie_period =30;
-		home->response_window = home->zombie_period - 1;
+		home->response_window.tv_sec = home->zombie_period - 1;
+		home->response_window.tv_usec = 0;
 
 		home->ping_check = HOME_PING_CHECK_NONE;
 

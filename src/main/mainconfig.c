@@ -901,6 +901,8 @@ int read_mainconfig(int reload)
 
 	/*
 	 * Set default initial request processing delay to 1 second.
+	 * Will be updated by half the lowest response window across all
+	 * home servers, if it is less than this.
 	 */
 	mainconfig.init_delay.tv_sec = 1;
 	mainconfig.init_delay.tv_usec = 0;
