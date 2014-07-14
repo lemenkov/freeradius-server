@@ -682,6 +682,7 @@ void revive_home_server(void *ctx)
 	char buffer[128];
 
 	home->state = HOME_STATE_ALIVE;
+	home->response_timeouts = 0;
 	home->currently_outstanding = 0;
 	home->revive_time = now;
 
@@ -759,6 +760,7 @@ static void received_response_to_ping(REQUEST *request)
 	}
 
 	home->state = HOME_STATE_ALIVE;
+	home->response_timeouts = 0;
 	home->currently_outstanding = 0;
 	home->revive_time = now;
 
@@ -1160,6 +1162,11 @@ static void no_response_to_proxied_request(void *ctx)
 	if ((home->last_packet + ((home->zombie_period + 3) / 4)) >= now.tv_sec) {
 		return;
 	}
+
+	/* If haven't exceeded maximum response timeouts */
+	home->response_timeouts++;
+	if (home->response_timeouts < home->max_response_timeouts)
+		return;
 
 	/*
 	 *	Enable the zombie period when we notice that the home
@@ -3149,6 +3156,7 @@ REQUEST *received_proxy_response(RADIUS_PACKET *packet)
 	 *	This behavior could be configurable.
 	 */
 	request->home_server->state = HOME_STATE_ALIVE;
+	request->home_server->response_timeouts = 0;
 	request->home_server->last_packet = now.tv_sec;
 	
 #ifdef WITH_COA
