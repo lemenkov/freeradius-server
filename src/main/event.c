@@ -2995,7 +2995,8 @@ int received_request(rad_listen_t *listener,
 	request->timestamp = request->received.tv_sec;
 	request->when = request->received;
 
-	request->delay = USEC;
+	request->delay = mainconfig.init_delay.tv_sec * USEC +
+				mainconfig.init_delay.tv_usec;
 
 	tv_add(&request->when, request->delay);
 
@@ -3227,7 +3228,8 @@ REQUEST *received_proxy_response(RADIUS_PACKET *packet)
 
 	request->child_state = REQUEST_QUEUED;
 	request->when = now;
-	request->delay = USEC;
+	request->delay = mainconfig.init_delay.tv_sec * USEC +
+				mainconfig.init_delay.tv_usec;
 	request->priority = RAD_LISTEN_PROXY;
 	tv_add(&request->when, request->delay);
 

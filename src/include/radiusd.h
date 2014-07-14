@@ -380,6 +380,7 @@ typedef struct main_config_t {
 #ifdef WITH_POST_PROXY_AUTHORIZE
 	int		post_proxy_authorize;
 #endif
+	struct timeval  init_delay; /* initial request processing delay */
 } MAIN_CONFIG_T;
 
 #define DEBUG	if(debug_flag)log_debug

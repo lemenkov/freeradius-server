@@ -900,6 +900,12 @@ int read_mainconfig(int reload)
 	cf_section_parse(cs, NULL, server_config);
 
 	/*
+	 * Set default initial request processing delay to 1 second.
+	 */
+	mainconfig.init_delay.tv_sec = 1;
+	mainconfig.init_delay.tv_usec = 0;
+
+	/*
 	 *	Free the old configuration items, and replace them
 	 *	with the new ones.
 	 *
