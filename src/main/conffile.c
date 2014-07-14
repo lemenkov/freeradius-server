@@ -1019,6 +1019,35 @@ int cf_item_parse(CONF_SECTION *cs, const char *name,
 		       sizeof(ipaddr.ipaddr.ip6addr));
 		break;
 
+	case PW_TYPE_TIMEVAL: {
+		int sec;
+		char *end;
+		struct timeval tv;
+		char buffer[7];
+
+		sec = strtoul(value, &end, 10);
+		tv.tv_sec = sec;
+		tv.tv_usec = 0;
+		if (*end == '.') {
+			sec = strlen(end + 1);
+
+			if (sec > 6) {
+				radlog(L_ERR, "Too much precision for timeval");
+				return -1;
+			}
+
+			strcpy(buffer, "000000");
+			memcpy(buffer, end + 1, sec);
+
+			sec = strtoul(buffer, NULL, 10);
+			tv.tv_usec = sec;
+		}
+		cf_log_info(cs, "\t%s = %d.%06d",
+				name, (int) tv.tv_sec, (int) tv.tv_usec);
+		memcpy(data, &tv, sizeof(tv));
+		}
+		break;
+
 	default:
 		radlog(L_ERR, "type %d not supported yet", type);
 		return -1;
