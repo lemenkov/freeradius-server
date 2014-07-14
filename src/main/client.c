@@ -527,6 +527,8 @@ static const CONF_PARSER client_config[] = {
 	  offsetof(RADCLIENT, password), 0, NULL },
 	{ "virtual_server",  PW_TYPE_STRING_PTR,
 	  offsetof(RADCLIENT, server), 0, NULL },
+	{ "response_window", PW_TYPE_TIMEVAL,
+	  offsetof(RADCLIENT, response_window), 0, NULL },
 	{ "server",  PW_TYPE_STRING_PTR, /* compatability with 2.0-pre */
 	  offsetof(RADCLIENT, server), 0, NULL },
 
@@ -693,6 +695,17 @@ static RADCLIENT *client_parse(CONF_SECTION *cs, int in_server)
 		break;
 	default:
 		break;
+	}
+
+	/* If response window is set */
+	if (timerisset(&c->response_window)) {
+		struct timeval	tv;
+		tv.tv_sec = 0;
+		tv.tv_usec = 1000;
+		if (timercmp(&c->response_window, &tv, <)) c->response_window = tv;
+		tv.tv_sec = 60;
+		tv.tv_usec = 0;
+		if (timercmp(&c->response_window, &tv, >)) c->response_window = tv;
 	}
 
 #ifdef WITH_DYNAMIC_CLIENTS

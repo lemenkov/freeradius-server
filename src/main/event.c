@@ -147,6 +147,27 @@ static void remove_from_request_hash(REQUEST *request)
 	request_stats_final(request);
 }
 
+/*
+ * Determine initial request processing delay.
+ */
+static int request_init_delay(REQUEST *request)
+{
+        struct timeval half_response_window;
+
+        /* Allow client response window to lower initial delay */
+        if (timerisset(&request->client->response_window)) {
+                half_response_window.tv_sec = request->client->response_window.tv_sec >> 1;
+                half_response_window.tv_usec =
+                        ((request->client->response_window.tv_sec & 1) * USEC +
+                                request->client->response_window.tv_usec) >> 1;
+                if (timercmp(&half_response_window, &request->root->init_delay, <))
+                        return (int)half_response_window.tv_sec * USEC +
+                                (int)half_response_window.tv_usec;
+        }
+
+        return (int)request->root->init_delay.tv_sec * USEC +
+                (int)request->root->init_delay.tv_usec;
+}
 
 static void ev_request_free(REQUEST **prequest)
 {
@@ -187,6 +208,27 @@ static void ev_request_free(REQUEST **prequest)
 }
 
 #ifdef WITH_PROXY
+static struct timeval *request_response_window(REQUEST *request)
+{
+        if (request->client) {
+                /*
+                 *      The client hasn't set the response window.  Return
+                 *      either the home server one, if set, or the global one.
+                 */
+                if (!timerisset(&request->client->response_window)) {
+                        return &request->home_server->response_window;
+                }
+
+                if (timercmp(&request->client->response_window,
+                             &request->home_server->response_window, <)) {
+                        return &request->client->response_window;
+                }
+        }
+
+        rad_assert(request->home_server != NULL);
+        return &request->home_server->response_window;
+}
+
 static REQUEST *lookup_in_proxy_hash(RADIUS_PACKET *reply)
 {
 	RADIUS_PACKET **proxy_p;
@@ -445,6 +487,7 @@ static int insert_into_proxy_hash(REQUEST *request, int retransmit)
 static void wait_for_proxy_id_to_expire(void *ctx)
 {
 	REQUEST *request = ctx;
+	struct timeval *response_window;
 
 	rad_assert(request->magic == REQUEST_MAGIC);
 	rad_assert(request->proxy != NULL);
@@ -459,8 +502,10 @@ static void wait_for_proxy_id_to_expire(void *ctx)
 		request->when.tv_sec += request->home_server->coa_mrd;
 	} else
 #endif
-	timeradd(&request->when, &request->home_server->response_window,
-			&request->when);
+	{
+		response_window = request_response_window(request);
+		timeradd(&request->when, response_window, &request->when);
+	}
 
 	if ((request->num_proxied_requests == request->num_proxied_responses) ||
 	    timercmp(&now, &request->when, >)) {
@@ -1872,6 +1917,7 @@ static int request_pre_handler(REQUEST *request)
 static int proxy_request(REQUEST *request)
 {
 	struct timeval when;
+	struct timeval *response_window;
 	char buffer[128];
 
 #ifdef WITH_COA
@@ -1899,10 +1945,11 @@ static int proxy_request(REQUEST *request)
 	gettimeofday(&request->proxy_when, NULL);
 
 	request->next_when = request->proxy_when;
-	timeradd(&request->next_when, &request->home_server->response_window,
+	response_window = request_response_window(request);
+	timeradd(&request->next_when, response_window,
 			&request->next_when);
 
-	rad_assert(timerisset(&request->home_server->response_window));
+	rad_assert(timerisset(response_window));
 
 	if (timercmp(&when, &request->next_when, <)) {
 		request->next_when = when;
@@ -2997,8 +3044,7 @@ int received_request(rad_listen_t *listener,
 	request->timestamp = request->received.tv_sec;
 	request->when = request->received;
 
-	request->delay = mainconfig.init_delay.tv_sec * USEC +
-				mainconfig.init_delay.tv_usec;
+	request->delay = request_init_delay(request);
 
 	tv_add(&request->when, request->delay);
 
@@ -3230,8 +3276,7 @@ REQUEST *received_proxy_response(RADIUS_PACKET *packet)
 
 	request->child_state = REQUEST_QUEUED;
 	request->when = now;
-	request->delay = mainconfig.init_delay.tv_sec * USEC +
-				mainconfig.init_delay.tv_usec;
+	request->delay = request_init_delay(request);
 	request->priority = RAD_LISTEN_PROXY;
 	tv_add(&request->when, request->delay);
 

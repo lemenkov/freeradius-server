@@ -133,6 +133,8 @@ typedef struct radclient {
 #endif
 #endif
 
+	struct timeval		response_window;
+
 #ifdef WITH_DYNAMIC_CLIENTS
 	int			lifetime;
 	int			dynamic; /* was dynamically defined */
