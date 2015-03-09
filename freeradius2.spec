@@ -535,7 +535,7 @@ fi
 %doc %{_mandir}/man8/radsniff.8.gz
 %doc %{_mandir}/man8/radsqlrelay.8.gz
 %doc %{_mandir}/man8/rlm_dbm_cat.8.gz
-%doc %{_mandir}/man8/rlm_dbm_parse.8.gz
+%doc %{_mandir}/man8/rlm_dbm_parser.8.gz
 %doc %{_mandir}/man8/rlm_ippool_tool.8.gz
 
 %files krb5
