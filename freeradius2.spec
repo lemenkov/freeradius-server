@@ -11,10 +11,6 @@ Source100: freeradius-radiusd-init
 Source102: freeradius-logrotate
 Source103: freeradius-pam-conf
 
-Patch1: freeradius-cert-config.patch
-Patch2: freeradius-radtest.patch
-Patch3: freeradius-cve-2012-3547.patch
-
 Conflicts: freeradius
 Conflicts: freeradius-debuginfo
 Obsoletes: freeradius-devel
@@ -168,9 +164,6 @@ This plugin provides the unixODBC support for the FreeRADIUS server project.
 
 %prep
 %setup -q -n freeradius-server-%{version}
-%patch1 -p1 -b .cert-config
-%patch2 -p1 -b .radtest
-%patch3 -p1 -b cve-2012-3547
 
 # Some source files mistakenly have execute permissions set
 find $RPM_BUILD_DIR/freeradius-server-%{version} \( -name '*.c' -o -name '*.h' \) -a -perm /0111 -exec chmod a-x {} +
