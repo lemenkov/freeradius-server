@@ -17,8 +17,6 @@ Obsoletes: freeradius-libs
 %define docdir %{_docdir}/freeradius-%{version}
 %define initddir %{?_initddir:%{_initddir}}%{!?_initddir:%{_initrddir}}
 
-BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-
 BuildRequires: autoconf
 BuildRequires: gdbm-devel
 BuildRequires: libtool
@@ -255,10 +253,6 @@ Please reference that document.
 
 EOF
 
-%clean
-rm -rf $RPM_BUILD_ROOT
-
-
 
 # Make sure our user/group is present prior to any package or subpackage installation
 %pre
@@ -288,7 +282,6 @@ fi
 
 
 %files
-%defattr(-,root,root)
 %doc %{docdir}/
 %config(noreplace) %{_sysconfdir}/pam.d/radiusd
 %config(noreplace) %{_sysconfdir}/logrotate.d/radiusd
@@ -527,7 +520,6 @@ fi
 %{_libdir}/freeradius/rlm_wimax-%{version}.so
 
 %files utils
-%defattr(-,root,root)
 /usr/bin/*
 # man-pages
 %doc %{_mandir}/man1/radclient.1.gz
@@ -547,23 +539,19 @@ fi
 %doc %{_mandir}/man8/rlm_ippool_tool.8.gz
 
 %files krb5
-%defattr(-,root,root)
 %{_libdir}/freeradius/rlm_krb5.so
 %{_libdir}/freeradius/rlm_krb5-%{version}.so
 %attr(640,root,radiusd) %config(noreplace) /etc/raddb/modules/krb5
 
 %files perl
-%defattr(-,root,root)
 %{_libdir}/freeradius/rlm_perl.so
 %{_libdir}/freeradius/rlm_perl-%{version}.so
 
 %files python
-%defattr(-,root,root)
 %{_libdir}/freeradius/rlm_python.so
 %{_libdir}/freeradius/rlm_python-%{version}.so
 
 %files mysql
-%defattr(-,root,root)
 %dir %attr(750,root,radiusd) /etc/raddb/sql/mysql
 %attr(640,root,radiusd) %config(noreplace) /etc/raddb/sql/mysql/*
 %dir %attr(750,root,radiusd) /etc/raddb/sql/ndb
@@ -573,7 +561,6 @@ fi
 
 %if 0%{?_with_oracle}
 %files oracle
-%defattr(-,root,root)
 %dir %attr(750,root,radiusd) /etc/raddb/sql/oracle
 %attr(640,root,radiusd) %config(noreplace) /etc/raddb/sql/oracle/*
 %{_libdir}/freeradius/rlm_sql_oracle.so
@@ -581,21 +568,18 @@ fi
 %endif
 
 %files postgresql
-%defattr(-,root,root)
 %dir %attr(750,root,radiusd) /etc/raddb/sql/postgresql
 %attr(640,root,radiusd) %config(noreplace) /etc/raddb/sql/postgresql/*
 %{_libdir}/freeradius/rlm_sql_postgresql.so
 %{_libdir}/freeradius/rlm_sql_postgresql-%{version}.so
 
 %files ldap
-%defattr(-,root,root)
 %attr(640,root,radiusd) %config(noreplace) /etc/raddb/ldap.attrmap
 %{_libdir}/freeradius/rlm_ldap.so
 %{_libdir}/freeradius/rlm_ldap-%{version}.so
 %attr(640,root,radiusd) %config(noreplace) /etc/raddb/modules/ldap
 
 %files unixODBC
-%defattr(-,root,root)
 %{_libdir}/freeradius/rlm_sql_unixodbc.so
 %{_libdir}/freeradius/rlm_sql_unixodbc-%{version}.so
 
