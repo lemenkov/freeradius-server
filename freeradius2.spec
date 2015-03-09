@@ -194,9 +194,7 @@ perl -pi -e 's:sys_lib_search_path_spec=.*:sys_lib_search_path_spec="/lib64 /usr
 make LINK_MODE=-pie
 
 %install
-rm -rf $RPM_BUILD_ROOT
-mkdir -p $RPM_BUILD_ROOT/var/run/radiusd
-mkdir -p $RPM_BUILD_ROOT/var/lib/radiusd
+mkdir -p $RPM_BUILD_ROOT/%{_localstatedir}/lib/radiusd
 # fix for bad libtool bug - can not rebuild dependent libs and bins
 #FIXME export LD_LIBRARY_PATH=$RPM_BUILD_ROOT/%{_libdir}
 make install R=$RPM_BUILD_ROOT
@@ -211,6 +209,9 @@ touch $RPM_BUILD_ROOT/var/log/radius/{radutmp,radius.log}
 install -D -m 755 %{SOURCE100} $RPM_BUILD_ROOT/%{initddir}/radiusd
 install -D -m 644 %{SOURCE102} $RPM_BUILD_ROOT/%{_sysconfdir}/logrotate.d/radiusd
 install -D -m 644 %{SOURCE103} $RPM_BUILD_ROOT/%{_sysconfdir}/pam.d/radiusd
+
+mkdir -p %{buildroot}%{_localstatedir}/run/
+install -d -m 0710 %{buildroot}%{_localstatedir}/run/radiusd/
 
 # remove unneeded stuff
 rm -rf doc/00-OLD
@@ -287,7 +288,8 @@ fi
 %config(noreplace) %{_sysconfdir}/pam.d/radiusd
 %config(noreplace) %{_sysconfdir}/logrotate.d/radiusd
 %{initddir}/radiusd
-%dir %attr(755,radiusd,radiusd) /var/lib/radiusd
+%dir %attr(710,radiusd,radiusd) %{_localstatedir}/run/radiusd
+%dir %attr(755,radiusd,radiusd) %{_localstatedir}/lib/radiusd
 # configs
 %dir %attr(755,root,radiusd) /etc/raddb
 %defattr(-,root,radiusd)
@@ -372,7 +374,6 @@ fi
 %attr(640,root,radiusd) %config(noreplace) /etc/raddb/modules/sradutmp
 %attr(640,root,radiusd) %config(noreplace) /etc/raddb/modules/unix
 %attr(640,root,radiusd) %config(noreplace) /etc/raddb/modules/wimax
-%dir %attr(755,radiusd,radiusd) /var/run/radiusd/
 # binaries
 %defattr(-,root,root)
 /usr/sbin/checkrad
