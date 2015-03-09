@@ -25,10 +25,20 @@ BuildRequires: net-snmp-devel
 BuildRequires: net-snmp-utils
 BuildRequires: readline-devel
 BuildRequires: libpcap-devel
+%if 0%{?el7}%{?fedora}
+BuildRequires: systemd-units
+%endif
 
 Requires(pre): shadow-utils glibc-common
+%if 0%{?el7}%{?fedora}
+Requires(post): systemd-sysv
+Requires(post): systemd-units
+Requires(preun): systemd-units
+Requires(postun): systemd-units
+%else
 Requires(post): /sbin/chkconfig
 Requires(preun): /sbin/chkconfig
+%endif
 
 %description
 The FreeRADIUS Server Project is a high performance and highly configurable
@@ -203,7 +213,12 @@ perl -i -pe 's/^#group =.*$/group = radiusd/' $RADDB/radiusd.conf
 mkdir -p $RPM_BUILD_ROOT/var/log/radius/radacct
 touch $RPM_BUILD_ROOT/var/log/radius/{radutmp,radius.log}
 
+%if 0%{?el7}%{?fedora}
+install -D -m 644 freeradius-tmpfiles.conf $RPM_BUILD_ROOT%{_tmpfilesdir}/radiusd.conf
+install -D -m 644 radiusd.service $RPM_BUILD_ROOT/%{_unitdir}/radiusd.service
+%else
 install -D -m 755 freeradius-radiusd-init $RPM_BUILD_ROOT/%{initddir}/radiusd
+%endif
 install -D -m 644 freeradius-logrotate $RPM_BUILD_ROOT/%{_sysconfdir}/logrotate.d/radiusd
 install -D -m 644 freeradius-pam-conf $RPM_BUILD_ROOT/%{_sysconfdir}/pam.d/radiusd
 
@@ -261,7 +276,11 @@ exit 0
 
 %post
 if [ $1 -eq 1 ]; then           # install
+%if 0%{?el7}%{?fedora}
+  %systemd_post radiusd.service
+%else
   /sbin/chkconfig --add radiusd
+%endif
   if [ ! -e /etc/raddb/certs/server.pem ]; then
     /sbin/runuser -g radiusd -c 'umask 007; /etc/raddb/certs/bootstrap' > /dev/null 2>&1
   fi
@@ -269,28 +288,46 @@ fi
 exit 0
 
 %preun
+%if 0%{?el7}%{?fedora}
+%systemd_preun radiusd.service
+%else
 if [ $1 -eq 0 ]; then           # uninstall
   /sbin/service radiusd stop > /dev/null 2>&1
   /sbin/chkconfig --del radiusd
 fi
 exit 0
+%endif
 
 
 %postun
+%if 0%{?el7}%{?fedora}
+%systemd_postun_with_restart radiusd.service
+%else
 if [ $1 -ge 1 ]; then           # upgrade
   /sbin/service radiusd condrestart >/dev/null 2>&1
 fi
+%endif
+
 if [ $1 -eq 0 ]; then           # uninstall
   getent passwd radiusd >/dev/null && /usr/sbin/userdel  radiusd > /dev/null 2>&1
   getent group  radiusd >/dev/null && /usr/sbin/groupdel radiusd > /dev/null 2>&1
 fi
 exit 0
 
+%if 0%{?el7}%{?fedora}
+/bin/systemctl try-restart radiusd.service >/dev/null 2>&1 || :
+%endif
+
 %files
 %doc %{docdir}/
 %config(noreplace) %{_sysconfdir}/pam.d/radiusd
 %config(noreplace) %{_sysconfdir}/logrotate.d/radiusd
+%if 0%{?el7}%{?fedora}
+%{_tmpfilesdir}/radiusd.conf
+%{_unitdir}/radiusd.service
+%else
 %{initddir}/radiusd
+%endif
 %dir %attr(710,radiusd,radiusd) %{_localstatedir}/run/radiusd
 %dir %attr(755,radiusd,radiusd) %{_localstatedir}/lib/radiusd
 # configs
