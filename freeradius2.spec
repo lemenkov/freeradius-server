@@ -157,7 +157,7 @@ This plugin provides the unixODBC support for the FreeRADIUS server project.
 %setup -q
 
 # Some source files mistakenly have execute permissions set
-find $RPM_BUILD_DIR/freeradius-server-%{version} \( -name '*.c' -o -name '*.h' \) -a -perm /0111 -exec chmod a-x {} +
+find $RPM_BUILD_DIR/%{name}-%{version} \( -name '*.c' -o -name '*.h' \) -a -perm /0111 -exec chmod a-x {} +
 
 %build
 %ifarch s390 s390x
