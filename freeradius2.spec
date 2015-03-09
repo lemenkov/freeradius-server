@@ -163,6 +163,7 @@ export CFLAGS="$RPM_OPT_FLAGS -fpic"
         --libdir=%{_libdir}/freeradius \
         --with-system-libtool \
         --disable-ltdl-install \
+        --with-udpfromto \
         --with-gnu-ld \
         --with-threads \
         --with-thread-pool \
