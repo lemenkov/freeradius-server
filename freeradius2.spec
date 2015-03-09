@@ -11,22 +11,8 @@ Source100: freeradius-radiusd-init
 Source102: freeradius-logrotate
 Source103: freeradius-pam-conf
 
-Conflicts: freeradius
-Conflicts: freeradius-debuginfo
 Obsoletes: freeradius-devel
-Conflicts: freeradius-krb5
-Conflicts: freeradius-ldap
 Obsoletes: freeradius-libs
-Conflicts: freeradius-mysql
-Conflicts: freeradius-perl
-Conflicts: freeradius-postgresql
-Conflicts: freeradius-python
-Conflicts: freeradius-unixODBC
-Conflicts: freeradius-utils
-Conflicts: freeradius-dialupadmin
-Conflicts: freeradius-dialupadmin-ldap
-Conflicts: freeradius-dialupadmin-mysql
-Conflicts: freeradius-dialupadmin-postgresql
 
 %define docdir %{_docdir}/freeradius-%{version}
 %define initddir %{?_initddir:%{_initddir}}%{!?_initddir:%{_initrddir}}
